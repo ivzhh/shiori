@@ -19,6 +19,7 @@ import (
 	"github.com/go-shiori/go-readability"
 	"github.com/go-shiori/shiori/internal/model"
 	"github.com/go-shiori/warc"
+	"github.com/ivzhh/html2article"
 
 	// Add support for png
 	_ "image/png"
@@ -33,6 +34,25 @@ type ProcessRequest struct {
 	KeepTitle   bool
 	KeepExcerpt bool
 	LogArchival bool
+}
+
+func getContentByDensity(raw string) (title, content string, err error) {
+	ext, e := html2article.NewFromHtml(raw)
+	if err != nil {
+		err = e
+		return
+	}
+	article, e := ext.ToArticle()
+	if err != nil {
+		err = e
+		return
+	}
+
+	title = article.Title
+	content = article.Content
+	err = nil
+
+	return
 }
 
 // ProcessBookmark process the bookmark and archive it if needed.
@@ -66,11 +86,22 @@ func ProcessBookmark(req ProcessRequest) (model.Bookmark, bool, error) {
 	// If this is HTML, parse for readable content
 	var imageURLs []string
 	if strings.Contains(contentType, "text/html") {
-		isReadable := readability.IsReadable(readabilityCheckInput)
 
-		article, err := readability.FromReader(readabilityInput, book.URL)
-		if err != nil {
+		rawContent := readabilityInput.String()
+
+		isReadable := readability.IsReadable(strings.NewReader(rawContent))
+
+		article, err := readability.FromReader(strings.NewReader(rawContent), book.URL)
+
+		title, content, err2 := getContentByDensity(rawContent)
+
+		if err != nil && err2 != nil {
 			return book, false, fmt.Errorf("failed to parse article: %v", err)
+		} else if err != nil {
+			isReadable = true
+			article.Byline = "Unknown"
+			article.Title = title
+			article.TextContent = content
 		}
 
 		book.Author = article.Byline
@@ -101,7 +132,11 @@ func ProcessBookmark(req ProcessRequest) (model.Bookmark, bool, error) {
 		}
 
 		if !isReadable {
-			book.Content = ""
+			if len(content) > 0 {
+				book.Content = content
+			} else {
+				book.Content = ""
+			}
 		}
 
 		book.HasContent = book.Content != ""

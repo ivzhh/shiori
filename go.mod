@@ -10,6 +10,7 @@ require (
 	github.com/go-shiori/warc v0.0.0-20191003110312-7b3c5582fd83
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gofrs/uuid v3.2.0+incompatible
+	github.com/ivzhh/html2article v0.0.0-20180131134645-09ac198090c2
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/julienschmidt/httprouter v1.2.0
 	github.com/lib/pq v1.1.1
