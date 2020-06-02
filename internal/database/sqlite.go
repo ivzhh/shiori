@@ -239,7 +239,7 @@ func (db *SQLiteDatabase) GetBookmarks(opts GetBookmarksOptions) ([]model.Bookma
 	query := `SELECT ` + strings.Join(columns, ",") + `
 		FROM bookmark b
 		LEFT JOIN bookmark_content bc ON bc.docid = b.id
-		LEFT JOIN bookmark_comment cm ON bc.docid = b.id
+		LEFT JOIN bookmark_comment cm ON cm.docid = b.id
 		WHERE 1`
 
 	// Add where clause

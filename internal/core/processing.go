@@ -113,10 +113,6 @@ func ProcessBookmark(req ProcessRequest) (model.Bookmark, bool, error) {
 			book.Title = article.Title
 		}
 
-		if !req.KeepExcerpt || book.Excerpt == "" {
-			book.Excerpt = article.Excerpt
-		}
-
 		// Sometimes article doesn't have any title, so make sure it is not empty
 		if book.Title == "" {
 			book.Title = book.URL
