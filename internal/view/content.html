@@ -22,6 +22,7 @@
 	<script src="js/dayjs.min.js"></script>
 	<script src="js/vue.min.js"></script>
 
+<<<<<<< HEAD
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 
 	<script language="javascript">
@@ -32,6 +33,15 @@
 			xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 			xmlhttp.send(JSON.stringify($(form).serializeArray()));
 			return false; //don't submit
+=======
+	<script language="javascript">
+		window.document.onload = function (e) {
+			for (let img of document.getElementsByTagName("img")) {
+				if (img.getAttribute("data-src") && !img.src) {
+					img.src = img.getAttribute("data-src");
+				}
+			}
+>>>>>>> 20a3142a1812af482d934e43e3baff39d448458f
 		}
 	</script>
 </head>
