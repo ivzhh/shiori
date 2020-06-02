@@ -21,6 +21,16 @@
 
 	<script src="js/dayjs.min.js"></script>
 	<script src="js/vue.min.js"></script>
+
+	<script language="javascript">
+		window.document.onload = function (e) {
+			for (let img of document.getElementsByTagName("img")) {
+				if (img.getAttribute("data-src") && !img.src) {
+					img.src = img.getAttribute("data-src");
+				}
+			}
+		}
+	</script>
 </head>
 
 <body class="night">
