@@ -22,13 +22,16 @@
 	<script src="js/dayjs.min.js"></script>
 	<script src="js/vue.min.js"></script>
 
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+
 	<script language="javascript">
-		window.document.onload = function (e) {
-			for (let img of document.getElementsByName("img")) {
-				if (img.getAttribute("data-src") && !img.getAttribute("src")) {
-					img.getAttribute("src") = img.getAttribute("data-src");
-				}
-			}
+		function onSubmit(form) {
+			var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
+			var theUrl = "/json-handler";
+			xmlhttp.open("POST", theUrl);
+			xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+			xmlhttp.send(JSON.stringify($(form).serializeArray()));
+			return false; //don't submit
 		}
 	</script>
 </head>
@@ -48,6 +51,11 @@
 		<div id="content" v-pre>
 			$$html .Book.HTML$$
 		</div>
+
+		<form onsubmit='return onSubmit(this)'>
+			<input name='user' placeholder='$$.Book.Excerpt$$'><br>
+			<button type='submit'>Try</button>
+		</form>
 	</div>
 
 	<script type="module">

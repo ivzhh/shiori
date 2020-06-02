@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -21,6 +22,8 @@ type SQLiteDatabase struct {
 func OpenSQLiteDatabase(databasePath string) (sqliteDB *SQLiteDatabase, err error) {
 	// Open database and start transaction
 	db := sqlx.MustConnect("sqlite3", databasePath)
+
+	log.Printf("Open SQLite: %s\n", databasePath)
 
 	tx, err := db.Beginx()
 	if err != nil {
@@ -73,6 +76,8 @@ func OpenSQLiteDatabase(databasePath string) (sqliteDB *SQLiteDatabase, err erro
 
 	tx.MustExec(`CREATE VIRTUAL TABLE IF NOT EXISTS bookmark_content USING fts4(title, content, html)`)
 
+	tx.MustExec(`CREATE VIRTUAL TABLE IF NOT EXISTS bookmark_comment USING fts4(comment)`)
+
 	// Alter table if needed
 	tx.Exec(`ALTER TABLE account ADD COLUMN owner INTEGER NOT NULL DEFAULT 0`)
 	tx.Exec(`ALTER TABLE bookmark ADD COLUMN public INTEGER NOT NULL DEFAULT 0`)
@@ -116,8 +121,16 @@ func (db *SQLiteDatabase) SaveBookmarks(bookmarks ...model.Bookmark) (result []m
 		(docid, title, content, html) 
 		VALUES (?, ?, ?, ?)`)
 
+	stmtInsertBookComment, _ := tx.Preparex(`INSERT OR IGNORE INTO bookmark_comment
+		(docid, comment) 
+		VALUES (?, ?)`)
+
 	stmtUpdateBookContent, _ := tx.Preparex(`UPDATE bookmark_content SET
 		title = ?, content = ?, html = ? 
+		WHERE docid = ?`)
+
+	stmtUpdateBookComment, _ := tx.Preparex(`UPDATE bookmark_comment SET
+		comment = ? 
 		WHERE docid = ?`)
 
 	stmtGetTag, _ := tx.Preparex(`SELECT id FROM tag WHERE name = ?`)
@@ -158,7 +171,9 @@ func (db *SQLiteDatabase) SaveBookmarks(bookmarks ...model.Bookmark) (result []m
 			book.URL, book.Title, book.Excerpt, book.Author, book.Public, book.Modified)
 
 		stmtUpdateBookContent.MustExec(book.Title, book.Content, book.HTML, book.ID)
+		stmtUpdateBookComment.MustExec(book.Excerpt, book.ID)
 		stmtInsertBookContent.MustExec(book.ID, book.Title, book.Content, book.HTML)
+		stmtInsertBookComment.MustExec(book.ID, book.Excerpt)
 
 		// Save book tags
 		newTags := []model.Tag{}
@@ -211,7 +226,7 @@ func (db *SQLiteDatabase) GetBookmarks(opts GetBookmarksOptions) ([]model.Bookma
 		`b.id`,
 		`b.url`,
 		`b.title`,
-		`b.excerpt`,
+		`cm.comment excerpt`,
 		`b.author`,
 		`b.public`,
 		`b.modified`,
@@ -224,6 +239,7 @@ func (db *SQLiteDatabase) GetBookmarks(opts GetBookmarksOptions) ([]model.Bookma
 	query := `SELECT ` + strings.Join(columns, ",") + `
 		FROM bookmark b
 		LEFT JOIN bookmark_content bc ON bc.docid = b.id
+		LEFT JOIN bookmark_comment cm ON bc.docid = b.id
 		WHERE 1`
 
 	// Add where clause
@@ -240,11 +256,17 @@ func (db *SQLiteDatabase) GetBookmarks(opts GetBookmarksOptions) ([]model.Bookma
 		query += ` AND (b.url LIKE ? OR b.excerpt LIKE ? OR b.id IN (
 			SELECT docid id 
 			FROM bookmark_content 
-			WHERE title MATCH ? OR content MATCH ?))`
+			WHERE title MATCH ? OR content MATCH ?)`
+
+		query += ` OR b.id IN (
+			SELECT docid id 
+			FROM bookmark_comment 
+			WHERE comment MATCH ?))`
 
 		args = append(args,
 			"%"+opts.Keyword+"%",
 			"%"+opts.Keyword+"%",
+			opts.Keyword,
 			opts.Keyword,
 			opts.Keyword)
 	}
@@ -375,11 +397,17 @@ func (db *SQLiteDatabase) GetBookmarksCount(opts GetBookmarksOptions) (int, erro
 		query += ` AND (b.url LIKE ? OR b.excerpt LIKE ? OR b.id IN (
 			SELECT docid id 
 			FROM bookmark_content 
-			WHERE title MATCH ? OR content MATCH ?))`
+			WHERE title MATCH ? OR content MATCH ?)`
+
+		query += ` OR b.id IN (
+				SELECT docid id 
+				FROM bookmark_comment 
+				WHERE comment MATCH ?))`
 
 		args = append(args,
 			"%"+opts.Keyword+"%",
 			"%"+opts.Keyword+"%",
+			opts.Keyword,
 			opts.Keyword,
 			opts.Keyword)
 	}
@@ -474,22 +502,27 @@ func (db *SQLiteDatabase) DeleteBookmarks(ids ...int) (err error) {
 	delBookmark := `DELETE FROM bookmark`
 	delBookmarkTag := `DELETE FROM bookmark_tag`
 	delBookmarkContent := `DELETE FROM bookmark_content`
+	delBookmarkComment := `DELETE FROM bookmark_comment`
 
 	// Delete bookmark(s)
 	if len(ids) == 0 {
 		tx.MustExec(delBookmarkContent)
 		tx.MustExec(delBookmarkTag)
 		tx.MustExec(delBookmark)
+		tx.MustExec(delBookmarkComment)
 	} else {
 		delBookmark += ` WHERE id = ?`
 		delBookmarkTag += ` WHERE bookmark_id = ?`
 		delBookmarkContent += ` WHERE docid = ?`
+		delBookmarkComment += ` WHERE docid = ?`
 
 		stmtDelBookmark, _ := tx.Preparex(delBookmark)
 		stmtDelBookmarkTag, _ := tx.Preparex(delBookmarkTag)
 		stmtDelBookmarkContent, _ := tx.Preparex(delBookmarkContent)
+		stmtDelBookmarkComment, _ := tx.Preparex(delBookmarkComment)
 
 		for _, id := range ids {
+			stmtDelBookmarkComment.MustExec(id)
 			stmtDelBookmarkContent.MustExec(id)
 			stmtDelBookmarkTag.MustExec(id)
 			stmtDelBookmark.MustExec(id)
@@ -508,10 +541,11 @@ func (db *SQLiteDatabase) DeleteBookmarks(ids ...int) (err error) {
 func (db *SQLiteDatabase) GetBookmark(id int, url string) (model.Bookmark, bool) {
 	args := []interface{}{id}
 	query := `SELECT
-		b.id, b.url, b.title, b.excerpt, b.author, b.public, b.modified,
+		b.id, b.url, b.title, cm.comment excerpt, b.author, b.public, b.modified,
 		bc.content, bc.html, bc.content <> "" has_content
 		FROM bookmark b
 		LEFT JOIN bookmark_content bc ON bc.docid = b.id
+		LEFT JOIN bookmark_comment cm ON cm.docid = b.id
 		WHERE b.id = ?`
 
 	if url != "" {
