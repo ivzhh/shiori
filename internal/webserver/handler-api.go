@@ -441,7 +441,101 @@ func (h *handler) apiUpdateBookmarkComment(w http.ResponseWriter, r *http.Reques
 
 	// Return new saved result
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(&newBook)
+	err = json.NewEncoder(w).Encode(&struct {
+		ID    int    `json:"id"`
+		URL   string `json:"url"`
+		Title string `json:"title"`
+	}{newBook.ID, newBook.ImageURL, newBook.Title})
+	checkError(err)
+}
+
+// apiUpdateBookmarkComment is handler for PUT /api/bookmarks/read
+func (h *handler) apiUpdateBookmarkReadTag(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	// Make sure session still valid
+	err := h.validateSession(r)
+	checkError(err)
+
+	// Decode request
+	request := model.Bookmark{}
+	tmpReq := struct {
+		ID string `json:"id"`
+	}{}
+	err = json.NewDecoder(r.Body).Decode(&tmpReq)
+	checkError(err)
+
+	request.ID, err = strconv.Atoi(tmpReq.ID)
+	// Validate input
+	if err != nil || request.ID == 0 {
+		panic(fmt.Errorf("ID must not empty"))
+	}
+
+	// Get existing bookmark from database
+	filter := database.GetBookmarksOptions{
+		IDs:         []int{request.ID},
+		WithContent: true,
+	}
+
+	bookmarks, err := h.DB.GetBookmarks(filter)
+	checkError(err)
+	if len(bookmarks) == 0 {
+		panic(fmt.Errorf("no bookmark with matching ids"))
+	}
+
+	// Set new bookmark data
+	book := bookmarks[0]
+
+	tags, err := h.DB.GetTags()
+	checkError(err)
+
+	readTag := model.Tag{ID: -1}
+
+	for i := 0; i < len(tags); i++ {
+		if tags[i].Name == "Read" {
+			readTag = tags[i]
+			break
+		}
+	}
+
+	if readTag.ID < 0 {
+		for i := 0; i < len(tags); i++ {
+			if tags[i].ID > readTag.ID {
+				readTag.ID = tags[i].ID
+			}
+		}
+
+		readTag.ID++
+		readTag.Deleted = false
+		readTag.Name = "Read"
+		readTag.NBookmarks = 1
+	}
+
+	hasReadTag := false
+	for i := 0; i < len(book.Tags); i++ {
+		if book.Tags[i].ID == readTag.ID {
+			hasReadTag = true
+			break
+		}
+	}
+	if !hasReadTag {
+		book.Tags = append(book.Tags, readTag)
+	}
+
+	// Update database
+	res, err := h.DB.SaveBookmarks(book)
+	checkError(err)
+
+	// Add thumbnail image to the saved bookmarks again
+	newBook := res[0]
+	newBook.ImageURL = request.ImageURL
+	newBook.HasArchive = request.HasArchive
+
+	// Return new saved result
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(&struct {
+		ID    int    `json:"id"`
+		URL   string `json:"url"`
+		Title string `json:"title"`
+	}{newBook.ID, newBook.ImageURL, newBook.Title})
 	checkError(err)
 }
 

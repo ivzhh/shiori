@@ -1,155 +1,189 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <base href="$$.RootPath$$" />
+    <title>$$.Book.Title$$ - Shiori - Bookmarks Manager</title>
 
-<head>
-	<base href="$$.RootPath$$">
-	<title>$$.Book.Title$$ - Shiori - Bookmarks Manager</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link
+      rel="apple-touch-icon-precomposed"
+      sizes="152x152"
+      href="res/apple-touch-icon-152x152.png"
+    />
+    <link
+      rel="apple-touch-icon-precomposed"
+      sizes="144x144"
+      href="res/apple-touch-icon-144x144.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      href="res/favicon-32x32.png"
+      sizes="32x32"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      href="res/favicon-16x16.png"
+      sizes="16x16"
+    />
+    <link rel="icon" type="image/x-icon" href="res/favicon.ico" />
 
-	<link rel="apple-touch-icon-precomposed" sizes="152x152" href="res/apple-touch-icon-152x152.png">
-	<link rel="apple-touch-icon-precomposed" sizes="144x144" href="res/apple-touch-icon-144x144.png">
-	<link rel="icon" type="image/png" href="res/favicon-32x32.png" sizes="32x32">
-	<link rel="icon" type="image/png" href="res/favicon-16x16.png" sizes="16x16">
-	<link rel="icon" type="image/x-icon" href="res/favicon.ico">
+    <link href="css/source-sans-pro.min.css" rel="stylesheet" />
+    <link href="css/stylesheet.css" rel="stylesheet" />
+    <link href="css/custom-dialog.css" rel="stylesheet" />
+    <link href="css/bookmark-item.css" rel="stylesheet" />
 
-	<link href="css/source-sans-pro.min.css" rel="stylesheet">
-	<link href="css/stylesheet.css" rel="stylesheet">
-	<link href="css/custom-dialog.css" rel="stylesheet">
-	<link href="css/bookmark-item.css" rel="stylesheet">
+    <script src="js/dayjs.min.js"></script>
+    <script src="js/vue.min.js"></script>
 
-	<script src="js/dayjs.min.js"></script>
-	<script src="js/vue.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+      textarea {
+        width: 100%;
+        padding-left: 4px;
+      }
 
-	<style>
-		textarea {
-			width: 100%;
-			padding-left: 4px;
-		}
+      .floatform {
+        position: fixed;
+        bottom: 2%;
+        right: 2%;
+      }
+    </style>
 
-		.floatform {
-			position: fixed;
-			bottom: 2%;
-			right: 2%;
-		}
-	</style>
+    <script language="javascript">
+      $(window).on("load", function () {
+        $("img").each(function () {
+          if (this.getAttribute("data-src") && !this.src) {
+            this.src = this.getAttribute("data-src");
+          }
+        });
+      });
 
-	<script language="javascript">
-		$(window).on('load', function () {
-			$("img").each(function () {
-				if (this.getAttribute("data-src") && !this.src) {
-					this.src = this.getAttribute("data-src");
-				}
-			});
-		});
+      function getFormData($form) {
+        var unindexed_array = $form.serializeArray();
+        var indexed_array = {};
 
-		function getFormData($form) {
-			var unindexed_array = $form.serializeArray();
-			var indexed_array = {};
+        $.map(unindexed_array, function (n, i) {
+          indexed_array[n["name"]] = n["value"];
+        });
 
-			$.map(unindexed_array, function (n, i) {
-				indexed_array[n['name']] = n['value'];
-			});
+        return JSON.stringify(indexed_array);
+      }
 
-			return JSON.stringify(indexed_array);
-		}
+      $(document).ready(function () {
+        var button_url = new Map();
+        button_url.set("#submit", "comment");
+        button_url.set("#markRead", "read");
 
-		$(document).ready(function () {
-			// click on button submit
-			$("#submit").on('click', function () {
-				// send ajax
-				$.ajax({
-					url: '/api/bookmarks/comment', // url where to submit the request
-					type: "POST", // type of action POST || GET
-					dataType: 'json', // data type
-					data: getFormData($("#comment_form")), // post data || get data
-					success: function (result) {
-						alert("Comment is saved.");
-					},
-					error: function (xhr, resp, text) {
-						console.log(xhr, resp, text);
-					}
-				})
-			});
-		});
-	</script>
-</head>
+        for (const [key, value] of button_url.entries()) {
+          $(key).on("click", function () {
+            // send ajax
+            $.ajax({
+              url: "/api/bookmarks/" + value, // url where to submit the request
+              type: "POST", // type of action POST || GET
+              dataType: "json", // data type
+              data: getFormData($("#comment_form")), // post data || get data
+              success: function (result) {
+                alert("Comment is saved.");
+              },
+              error: function (xhr, resp, text) {
+                console.log(xhr, resp, text);
+              },
+            });
+          });
+        }
+      });
+    </script>
+  </head>
 
-<body class="night">
-	<div id="content-scene" :class="{night: appOptions.nightMode}">
-		<div id="header">
-			<p id="metadata" v-cloak>Added {{localtime()}}</p>
-			<p id="title">$$.Book.Title$$</p>
-			<div id="links">
-				<a href="$$.Book.URL$$" target="_blank" rel="noopener">View Original</a>
-				$$if .Book.HasArchive$$
-				<a href="bookmark/$$.Book.ID$$/archive">View Archive</a>
-				$$end$$
-			</div>
-		</div>
-		<div id="content" v-pre>
-			$$html .Book.HTML$$
-		</div>
+  <body class="night">
+    <div id="content-scene" :class="{night: appOptions.nightMode}">
+      <div id="header">
+        <p id="metadata" v-cloak>Added {{localtime()}}</p>
+        <p id="title">$$.Book.Title$$</p>
+        <div id="links">
+          <a href="$$.Book.URL$$" target="_blank" rel="noopener"
+            >View Original</a
+          >
+          $$if .Book.HasArchive$$
+          <a href="bookmark/$$.Book.ID$$/archive">View Archive</a>
+          $$end$$
+        </div>
+      </div>
+      <div id="content" v-pre>
+        $$html .Book.HTML$$
+      </div>
 
-		<div class="floatform">
-			<form id='comment_form'>
-				Post ID: <input type="text" name="id" value="$$.Book.ID$$" readonly><br>
-				Comment:<br>
-				<textarea name="comment" rows="7" width="100%">$$.Book.Excerpt$$</textarea>
-				<input id="submit" type="button" name="submit" value="submit">
-			</form>
-		</div>
+      <div class="floatform">
+        <form id="comment_form">
+          Post ID:
+          <input type="text" name="id" value="$$.Book.ID$$" readonly /><br />
+          Comment:<br />
+          <textarea name="comment" rows="7" width="100%">
+$$.Book.Excerpt$$</textarea
+          >
+          <input id="submit" type="button" name="submit" value="submit" />
+          <input
+            id="markRead"
+            type="button"
+            name="markRead"
+            value="mark read"
+          />
+        </form>
+      </div>
+    </div>
 
-	</div>
+    <script type="module">
+      // Create initial variable
+      import basePage from "./js/page/base.js";
 
-	<script type="module">
-		// Create initial variable
-		import basePage from "./js/page/base.js";
+      new Vue({
+        el: "#content-scene",
+        mixins: [basePage],
+        data: {
+          modified: "$$.Book.Modified$$",
+        },
+        methods: {
+          localtime() {
+            var strTime = this.modified.replace(" ", "T");
+            if (!strTime.endsWith("Z")) {
+              strTime += "Z";
+            }
+            return dayjs(strTime).format("D MMMM YYYY, HH:mm:ss");
+          },
+          loadSetting() {
+            var opts = JSON.parse(localStorage.getItem("shiori-setting")) || {},
+              showId = typeof opts.showId === "boolean" ? opts.showId : false,
+              listMode =
+                typeof opts.listMode === "boolean" ? opts.listMode : false,
+              nightMode =
+                typeof opts.nightMode === "boolean" ? opts.nightMode : false,
+              useArchive =
+                typeof opts.useArchive === "boolean" ? opts.useArchive : false;
 
-		new Vue({
-			el: '#content-scene',
-			mixins: [basePage],
-			data: {
-				modified: "$$.Book.Modified$$"
-			},
-			methods: {
-				localtime() {
-					var strTime = this.modified.replace(" ", "T");
-					if (!strTime.endsWith("Z")) {
-						strTime += "Z";
-					}
-					return dayjs(strTime).format("D MMMM YYYY, HH:mm:ss");
-				},
-				loadSetting() {
-					var opts = JSON.parse(localStorage.getItem("shiori-setting")) || {},
-						showId = (typeof opts.showId === "boolean") ? opts.showId : false,
-						listMode = (typeof opts.listMode === "boolean") ? opts.listMode : false,
-						nightMode = (typeof opts.nightMode === "boolean") ? opts.nightMode : false,
-						useArchive = (typeof opts.useArchive === "boolean") ? opts.useArchive : false;
+            this.appOptions = {
+              showId: showId,
+              listMode: listMode,
+              nightMode: nightMode,
+              useArchive: useArchive,
+            };
 
-					this.appOptions = {
-						showId: showId,
-						listMode: listMode,
-						nightMode: nightMode,
-						useArchive: useArchive,
-					};
+            document.body.className = nightMode ? "night" : "";
+          },
+        },
+        mounted() {
+          this.loadSetting();
 
-					document.body.className = nightMode ? "night" : "";
-				}
-			},
-			mounted() {
-				this.loadSetting();
-
-				document.querySelectorAll("#content a").forEach(elem => {
-					elem.setAttribute("target", "_blank");
-					elem.setAttribute("rel", "noopener");
-				});
-			}
-		});
-	</script>
-</body>
-
+          document.querySelectorAll("#content a").forEach((elem) => {
+            elem.setAttribute("target", "_blank");
+            elem.setAttribute("rel", "noopener");
+          });
+        },
+      });
+    </script>
+  </body>
 </html>
