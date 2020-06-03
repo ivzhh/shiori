@@ -67,9 +67,7 @@
 					dataType: 'json', // data type
 					data: getFormData($("#comment_form")), // post data || get data
 					success: function (result) {
-						// you can see the result from the console
-						// tab of the developer tools
-						console.log(result);
+						alert("Comment is saved.");
 					},
 					error: function (xhr, resp, text) {
 						console.log(xhr, resp, text);
