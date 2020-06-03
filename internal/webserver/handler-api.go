@@ -484,41 +484,7 @@ func (h *handler) apiUpdateBookmarkReadTag(w http.ResponseWriter, r *http.Reques
 	// Set new bookmark data
 	book := bookmarks[0]
 
-	tags, err := h.DB.GetTags()
-	checkError(err)
-
-	readTag := model.Tag{ID: -1}
-
-	for i := 0; i < len(tags); i++ {
-		if tags[i].Name == "Read" {
-			readTag = tags[i]
-			break
-		}
-	}
-
-	if readTag.ID < 0 {
-		for i := 0; i < len(tags); i++ {
-			if tags[i].ID > readTag.ID {
-				readTag.ID = tags[i].ID
-			}
-		}
-
-		readTag.ID++
-		readTag.Deleted = false
-		readTag.Name = "Read"
-		readTag.NBookmarks = 1
-	}
-
-	hasReadTag := false
-	for i := 0; i < len(book.Tags); i++ {
-		if book.Tags[i].ID == readTag.ID {
-			hasReadTag = true
-			break
-		}
-	}
-	if !hasReadTag {
-		book.Tags = append(book.Tags, readTag)
-	}
+	book.Tags = append(book.Tags, model.Tag{Name: "read"})
 
 	// Update database
 	res, err := h.DB.SaveBookmarks(book)
