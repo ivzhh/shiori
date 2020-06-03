@@ -391,6 +391,60 @@ func (h *handler) apiUpdateBookmark(w http.ResponseWriter, r *http.Request, ps h
 	checkError(err)
 }
 
+// apiUpdateBookmarkComment is handler for PUT /api/bookmarks/comment
+func (h *handler) apiUpdateBookmarkComment(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	// Make sure session still valid
+	err := h.validateSession(r)
+	checkError(err)
+
+	// Decode request
+	request := model.Bookmark{}
+	tmpReq := struct {
+		ID      string `json:"id"`
+		Excerpt string `json:"comment"`
+	}{}
+	err = json.NewDecoder(r.Body).Decode(&tmpReq)
+	checkError(err)
+
+	request.ID, err = strconv.Atoi(tmpReq.ID)
+	// Validate input
+	if err != nil || request.ID == 0 {
+		panic(fmt.Errorf("ID must not empty"))
+	}
+
+	request.Excerpt = tmpReq.Excerpt
+
+	// Get existing bookmark from database
+	filter := database.GetBookmarksOptions{
+		IDs:         []int{request.ID},
+		WithContent: true,
+	}
+
+	bookmarks, err := h.DB.GetBookmarks(filter)
+	checkError(err)
+	if len(bookmarks) == 0 {
+		panic(fmt.Errorf("no bookmark with matching ids"))
+	}
+
+	// Set new bookmark data
+	book := bookmarks[0]
+	book.Excerpt = request.Excerpt
+
+	// Update database
+	res, err := h.DB.SaveBookmarks(book)
+	checkError(err)
+
+	// Add thumbnail image to the saved bookmarks again
+	newBook := res[0]
+	newBook.ImageURL = request.ImageURL
+	newBook.HasArchive = request.HasArchive
+
+	// Return new saved result
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(&newBook)
+	checkError(err)
+}
+
 // apiUpdateCache is handler for PUT /api/cache
 func (h *handler) apiUpdateCache(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// Make sure session still valid

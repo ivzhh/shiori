@@ -24,12 +24,56 @@
 
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
+	<style>
+		textarea {
+			width: 100%;
+		}
+
+		.floatform {
+			position: fixed;
+			bottom: 2%;
+			right: 2%;
+		}
+	</style>
+
 	<script language="javascript">
 		$(window).on('load', function () {
 			$("img").each(function () {
 				if (this.getAttribute("data-src") && !this.src) {
 					this.src = this.getAttribute("data-src");
 				}
+			});
+		});
+
+		function getFormData($form) {
+			var unindexed_array = $form.serializeArray();
+			var indexed_array = {};
+
+			$.map(unindexed_array, function (n, i) {
+				indexed_array[n['name']] = n['value'];
+			});
+
+			return JSON.stringify(indexed_array);
+		}
+
+		$(document).ready(function () {
+			// click on button submit
+			$("#submit").on('click', function () {
+				// send ajax
+				$.ajax({
+					url: '/api/bookmarks/comment', // url where to submit the request
+					type: "POST", // type of action POST || GET
+					dataType: 'json', // data type
+					data: getFormData($("#comment_form")), // post data || get data
+					success: function (result) {
+						// you can see the result from the console
+						// tab of the developer tools
+						console.log(result);
+					},
+					error: function (xhr, resp, text) {
+						console.log(xhr, resp, text);
+					}
+				})
 			});
 		});
 	</script>
@@ -51,10 +95,15 @@
 			$$html .Book.HTML$$
 		</div>
 
-		<form onsubmit='return onSubmit(this)'>
-			<input name='user' placeholder='$$.Book.Excerpt$$'><br>
-			<button type='submit'>Try</button>
-		</form>
+		<div class="floatform">
+			<form id='comment_form'>
+				Post ID: <input type="text" name="id" value="$$.Book.ID$$" readonly><br>
+				Comment:<br>
+				<textarea name="comment" rows="20" width="100%">$$.Book.Excerpt$$</textarea>
+				<input id="submit" type="button" name="submit" value="submit">
+			</form>
+		</div>
+
 	</div>
 
 	<script type="module">

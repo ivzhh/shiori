@@ -68,6 +68,7 @@ func ServeApp(cfg Config) error {
 	router.POST(jp("/api/bookmarks"), hdl.apiInsertBookmark)
 	router.DELETE(jp("/api/bookmarks"), hdl.apiDeleteBookmark)
 	router.PUT(jp("/api/bookmarks"), hdl.apiUpdateBookmark)
+	router.POST(jp("/api/bookmarks/comment"), hdl.apiUpdateBookmarkComment)
 	router.PUT(jp("/api/cache"), hdl.apiUpdateCache)
 	router.PUT(jp("/api/bookmarks/tags"), hdl.apiUpdateBookmarkTags)
 	router.POST(jp("/api/bookmarks/ext"), hdl.apiInsertViaExtension)
