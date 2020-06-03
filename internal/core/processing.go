@@ -38,12 +38,12 @@ type ProcessRequest struct {
 
 func getContentByDensity(raw string) (title, content string, err error) {
 	ext, e := html2article.NewFromHtml(raw)
-	if err != nil {
+	if e != nil {
 		err = e
 		return
 	}
 	article, e := ext.ToArticle()
-	if err != nil {
+	if e != nil {
 		err = e
 		return
 	}
