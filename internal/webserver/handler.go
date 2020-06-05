@@ -26,6 +26,9 @@ type handler struct {
 }
 
 func (h *handler) prepareSessionCache() {
+	h.SessionCache.LoadFile("/tmp/mem/shiori-session-cache")
+	h.UserCache.LoadFile("/tmp/mem/shiori-user-cache")
+
 	h.SessionCache.OnEvicted(func(key string, val interface{}) {
 		account := val.(model.Account)
 		arr, found := h.UserCache.Get(account.Username)
@@ -42,6 +45,9 @@ func (h *handler) prepareSessionCache() {
 		}
 
 		h.UserCache.Set(account.Username, sessionIDs, -1)
+
+		h.SessionCache.SaveFile("/tmp/mem/shiori-session-cache")
+		h.UserCache.SaveFile("/tmp/mem/shiori-user-cache")
 	})
 }
 

@@ -63,6 +63,9 @@ func (h *handler) apiLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 		w.Header().Set("Content-Type", "application/json")
 		err = json.NewEncoder(w).Encode(&loginResult)
 		checkError(err)
+
+		h.SessionCache.SaveFile("/tmp/mem/shiori-session-cache")
+		h.UserCache.SaveFile("/tmp/mem/shiori-user-cache")
 	}
 
 	// Check if user's database is empty or there are no owner.
