@@ -3,6 +3,7 @@ package webserver
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 	"net/http"
 	"os"
@@ -63,9 +64,6 @@ func (h *handler) apiLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 		w.Header().Set("Content-Type", "application/json")
 		err = json.NewEncoder(w).Encode(&loginResult)
 		checkError(err)
-
-		h.SessionCache.SaveFile("/tmp/mem/shiori-session-cache")
-		h.UserCache.SaveFile("/tmp/mem/shiori-user-cache")
 	}
 
 	// Check if user's database is empty or there are no owner.
@@ -112,6 +110,15 @@ func (h *handler) apiLogin(w http.ResponseWriter, r *http.Request, ps httprouter
 
 	// Create session
 	genSession(account, expTime)
+
+	saveErr := h.SessionCache.SaveFile("/tmp/mem/shiori-session-cache")
+	if saveErr != nil {
+		log.Printf("fail to save session to file: %s", saveErr)
+	}
+	saveErr = h.UserCache.SaveFile("/tmp/mem/shiori-user-cache")
+	if saveErr != nil {
+		log.Printf("fail to save user to file: %s", saveErr)
+	}
 }
 
 // apiLogout is handler for POST /api/logout

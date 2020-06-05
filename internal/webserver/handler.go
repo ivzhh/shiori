@@ -3,6 +3,7 @@ package webserver
 import (
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 
 	"github.com/go-shiori/shiori/internal/database"
@@ -26,8 +27,14 @@ type handler struct {
 }
 
 func (h *handler) prepareSessionCache() {
-	h.SessionCache.LoadFile("/tmp/mem/shiori-session-cache")
-	h.UserCache.LoadFile("/tmp/mem/shiori-user-cache")
+	loadErr := h.SessionCache.LoadFile("/tmp/mem/shiori-session-cache")
+	if loadErr != nil {
+		log.Printf("fail to load session from file: %s", loadErr)
+	}
+	loadErr = h.UserCache.LoadFile("/tmp/mem/shiori-user-cache")
+	if loadErr != nil {
+		log.Printf("fail to load session from file: %s", loadErr)
+	}
 
 	h.SessionCache.OnEvicted(func(key string, val interface{}) {
 		account := val.(model.Account)
@@ -46,8 +53,14 @@ func (h *handler) prepareSessionCache() {
 
 		h.UserCache.Set(account.Username, sessionIDs, -1)
 
-		h.SessionCache.SaveFile("/tmp/mem/shiori-session-cache")
-		h.UserCache.SaveFile("/tmp/mem/shiori-user-cache")
+		saveErr := h.SessionCache.SaveFile("/tmp/mem/shiori-session-cache")
+		if saveErr != nil {
+			log.Printf("fail to save session to file: %s", saveErr)
+		}
+		saveErr = h.UserCache.SaveFile("/tmp/mem/shiori-user-cache")
+		if saveErr != nil {
+			log.Printf("fail to save session to file: %s", saveErr)
+		}
 	})
 }
 
