@@ -1,6 +1,7 @@
 package webserver
 
 import (
+	"encoding/gob"
 	"fmt"
 	"html/template"
 	"log"
@@ -27,6 +28,8 @@ type handler struct {
 }
 
 func (h *handler) prepareSessionCache() {
+	gob.Register(model.Account{})
+
 	loadErr := h.SessionCache.LoadFile("/tmp/mem/shiori-session-cache")
 	if loadErr != nil {
 		log.Printf("fail to load session from file: %s", loadErr)
