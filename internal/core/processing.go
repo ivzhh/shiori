@@ -50,7 +50,7 @@ func getContentByDensity(raw string) (title, content string, err error) {
 	}
 
 	title = article.Title
-	content = article.Content
+	content = article.Html
 	err = nil
 
 	return
@@ -108,7 +108,7 @@ func ProcessBookmark(req ProcessRequest) (model.Bookmark, bool, error) {
 
 		book.Author = article.Byline
 		book.Content = article.TextContent
-		book.HTML = article.Content
+		book.HTML = content
 
 		// If title and excerpt doesnt have submitted value, use from article
 		if !req.KeepTitle || book.Title == "" {
