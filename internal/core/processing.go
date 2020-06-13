@@ -8,6 +8,7 @@ import (
 	"image/draw"
 	"image/jpeg"
 	"io"
+	"log"
 	"math"
 	"os"
 	"path"
@@ -98,6 +99,7 @@ func ProcessBookmark(req ProcessRequest) (model.Bookmark, bool, error) {
 		if err != nil && err2 != nil {
 			return book, false, fmt.Errorf("failed to parse article: %v", err)
 		} else if err != nil {
+			log.Printf("use html2article")
 			isReadable = true
 			article.Byline = "Unknown"
 			article.Title = title
@@ -127,7 +129,7 @@ func ProcessBookmark(req ProcessRequest) (model.Bookmark, bool, error) {
 			imageURLs = append(imageURLs, article.Favicon)
 		}
 
-		if !isReadable {
+		if !isReadable && len(book.Content) == 0 {
 			if len(content) > 0 {
 				book.Content = content
 			} else {
