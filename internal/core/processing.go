@@ -50,7 +50,7 @@ func getContentByDensity(raw string) (title, content string, err error) {
 	}
 
 	title = article.Title
-	content = article.Html
+	content = article.Content
 	err = nil
 
 	return
@@ -108,7 +108,7 @@ func ProcessBookmark(req ProcessRequest) (model.Bookmark, bool, error) {
 
 		book.Author = article.Byline
 		book.Content = article.TextContent
-		book.HTML = content
+		book.HTML = article.Content
 
 		// If title and excerpt doesnt have submitted value, use from article
 		if !req.KeepTitle || book.Title == "" {
@@ -129,9 +129,14 @@ func ProcessBookmark(req ProcessRequest) (model.Bookmark, bool, error) {
 			imageURLs = append(imageURLs, article.Favicon)
 		}
 
-		if !isReadable && len(book.Content) == 0 {
-			if len(content) > 0 {
-				book.Content = content
+		if !isReadable {
+			if len(book.HTML) > 0 {
+				book.HTML = strings.ReplaceAll(book.HTML, "\n", "<br>")
+				book.HTML = strings.ReplaceAll(book.HTML, "\t", "&emsp;")
+				book.HTML = strings.ReplaceAll(book.HTML, "    ", "&emsp;")
+				book.HTML = strings.ReplaceAll(book.HTML, "    ", "&ensp;")
+			} else if len(content) > 0 {
+				book.Content = strings.ReplaceAll(content, "\n", "<br>")
 			} else {
 				book.Content = ""
 			}
