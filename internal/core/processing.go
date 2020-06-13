@@ -16,9 +16,9 @@ import (
 	"strings"
 
 	"github.com/disintegration/imaging"
-	"github.com/go-shiori/go-readability"
 	"github.com/go-shiori/shiori/internal/model"
 	"github.com/go-shiori/warc"
+	"github.com/ivzhh/go-readability"
 	"github.com/ivzhh/html2article"
 
 	// Add support for png
