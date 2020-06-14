@@ -110,6 +110,11 @@ func ProcessBookmark(req ProcessRequest) (model.Bookmark, bool, error) {
 		book.Content = article.TextContent
 		book.HTML = article.Content
 
+		book.HTML = strings.ReplaceAll(book.HTML, "\n", "<br>")
+		book.HTML = strings.ReplaceAll(book.HTML, "\t", "&emsp;")
+		book.HTML = strings.ReplaceAll(book.HTML, "    ", "&emsp;")
+		book.HTML = strings.ReplaceAll(book.HTML, "    ", "&ensp;")
+
 		// If title and excerpt doesnt have submitted value, use from article
 		if !req.KeepTitle || book.Title == "" {
 			book.Title = article.Title
@@ -131,14 +136,12 @@ func ProcessBookmark(req ProcessRequest) (model.Bookmark, bool, error) {
 
 		if !isReadable {
 			if len(book.HTML) > 0 {
-				book.HTML = strings.ReplaceAll(book.HTML, "\n", "<br>")
-				book.HTML = strings.ReplaceAll(book.HTML, "\t", "&emsp;")
-				book.HTML = strings.ReplaceAll(book.HTML, "    ", "&emsp;")
-				book.HTML = strings.ReplaceAll(book.HTML, "    ", "&ensp;")
+				isReadable = true
 			} else if len(content) > 0 {
-				book.Content = strings.ReplaceAll(content, "\n", "<br>")
+				book.HTML = strings.ReplaceAll(content, "\n", "<br>")
+				isReadable = true
 			} else {
-				book.Content = ""
+				book.HTML = ""
 			}
 		}
 
