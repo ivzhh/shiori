@@ -1,7 +1,6 @@
 package webserver
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -63,12 +62,7 @@ func (h *handler) apiInsertViaExtension(w http.ResponseWriter, r *http.Request, 
 	var contentType string
 	var contentBuffer io.Reader
 
-	if book.HTML == "" {
-		contentBuffer, contentType, _ = core.DownloadBookmark(book.URL)
-	} else {
-		contentType = "text/html; charset=UTF-8"
-		contentBuffer = bytes.NewBufferString(book.HTML)
-	}
+	contentBuffer, contentType, _ = core.DownloadBookmark(book.URL)
 
 	// At this point the web page already downloaded.
 	// Time to process it.
