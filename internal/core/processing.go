@@ -13,6 +13,7 @@ import (
 	"os"
 	"path"
 	fp "path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -25,6 +26,12 @@ import (
 	// Add support for png
 	_ "image/png"
 )
+
+var brRemover *regexp.Regexp
+
+func init() {
+	brRemover = regexp.MustCompile(`(<br/?>){2,}`)
+}
 
 // ProcessRequest is the request for processing bookmark.
 type ProcessRequest struct {
@@ -114,6 +121,8 @@ func ProcessBookmark(req ProcessRequest) (model.Bookmark, bool, error) {
 		book.HTML = strings.ReplaceAll(book.HTML, "\t", "&emsp;")
 		book.HTML = strings.ReplaceAll(book.HTML, "    ", "&emsp;")
 		book.HTML = strings.ReplaceAll(book.HTML, "    ", "&ensp;")
+
+		book.HTML = brRemover.ReplaceAllString(book.HTML, "<br>")
 
 		// If title and excerpt doesnt have submitted value, use from article
 		if !req.KeepTitle || book.Title == "" {
